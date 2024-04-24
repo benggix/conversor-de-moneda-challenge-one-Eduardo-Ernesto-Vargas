@@ -1,6 +1,10 @@
-// IMPORTACONES NECESARIOS PARA TRABAHAR CON SCANNER Y EL HTTP CLIENTE.
+// IMPORTACONES NECESARIOS PARA TRABAJAR CON SCANNER Y EL HTTP CLIENT, AGREGAMOS LAS DEMAS IMPORTACIONES PARA HACER PETICIONES Y MANDAR RESPUESTA HTPP.
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
 import java.util.Scanner;
+import com.google.gson.*;
 
 public class Main {
   // CONFIGURAMOS NUESTRA API_KEY Y LA BASE URL.
@@ -68,7 +72,30 @@ public class Main {
         continue;
       }
 
+      System.out.print("Ingrese el valor que desea convertir: ");
+      double amount = scanner.nextDouble();
+
+      try {
+        double convertedAmount = convertCurrency(fromCurrency, toCurrency, amount, client);
+        System.out.println(amount + " " + fromCurrency + " es igual a " + convertedAmount + " " + toCurrency);
+      } catch (Exception e) {
+        System.out.println("Error al convertir moneda: " + e.getMessage());
       }
     }
+    scanner.close();
   }
 
+  public static double convertCurrency(String fromCurrency, String toCurrency, double amount, HttpClient client) throws Exception {
+    String endpoint = BASE_URL + API_KEY + "/pair/" + fromCurrency + "/" + toCurrency;
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(endpoint))
+            .build();
+
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+    JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+    double exchangeRate = jsonResponse.get("conversion_rate").getAsDouble();
+
+    return amount * exchangeRate;
+  }
+}
